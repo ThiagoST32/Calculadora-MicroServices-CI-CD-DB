@@ -1,0 +1,14 @@
+GRANT CONNECT TO calcUserDB;
+GRANT VIEW DATABASE STATE TO calcUserDB;
+GRANT VIEW DEFINITION TO calcUserDB;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::dbo TO calcUserDB;
+GRANT EXECUTE ON SCHEMA::dbo TO calcUserDB;
+
+GRANT SELECT, INSERT, UPDATE ON dbo.Operations TO calcUserDB;
+
+GRANT EXECUTE ON dbo.sp_CalculateOperation TO calcUserDB;
+GRANT EXECUTE ON dbo.fn_GetCalculationHistory TO calcUserDB;
+
+GRANT VIEW DEFINITION ON OBJECT::dbo.CalculationHistory TO calcUserDB;
+
