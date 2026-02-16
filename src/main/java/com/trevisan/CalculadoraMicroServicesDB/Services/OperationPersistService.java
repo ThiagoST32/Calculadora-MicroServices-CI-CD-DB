@@ -37,11 +37,6 @@ public class OperationPersistService {
 
     public OperationsResponseDTO getPreviousOperations(){
         var operaReturned = repository.findPreviousOperationsPersisted();
-        return new OperationsResponseDTO(
-                operaReturned.getValueOne(),
-                operaReturned.getValueTwo(),
-                operaReturned.getResult(),
-                operaReturned.getTipoDeOperacao()
-        );
+        return mappers.mapToOperationsResponse(operaReturned);
     }
 }

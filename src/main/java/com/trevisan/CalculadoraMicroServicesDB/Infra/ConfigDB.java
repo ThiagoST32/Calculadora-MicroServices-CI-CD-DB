@@ -25,9 +25,10 @@ public class ConfigDB implements CommandLineRunner{
             "SELECT", "INSERT", "UPDATE", "DELETE", "EXECUTE"
     );
 
-    private static final String DatabaseTypeMysql = "MYSQL";
-    private static final String DatabaseTypePostgres = "POSTGRES";
-    private static final String DatabaseTypeSqlServer = "SQLSERVER";
+    private static final String DatabaseTypeMysql = "MySQL";
+    private static final String DatabaseTypePostgres = "Postgress";
+    private static final String DatabaseTypeSqlServer = "SqlServer";
+    private static final String DatabaseTypeH2 = "H2";
 
     private final DataSource dataSource;
 
@@ -36,7 +37,7 @@ public class ConfigDB implements CommandLineRunner{
         this.dataSource = dataSource;
     }
 
-    private void checkConnection(){
+    public void checkConnection(){
         log.info("Checking connection DB");
         try {
             if (getConnection().isClosed()){
@@ -47,11 +48,11 @@ public class ConfigDB implements CommandLineRunner{
             getConnection().close();
         } catch (SQLException ex){
             log.error("Error to connect on Database! - {}", String.valueOf(ex.getNextException()));
-            throw new RuntimeException();
+            throw new RuntimeException(ex);
         }
     }
 
-    private void validateConnection(){
+    public void validateConnection(){
         log.info("Validating connection DB");
         try{
             Connection connection = getConnection();
@@ -65,11 +66,11 @@ public class ConfigDB implements CommandLineRunner{
             connection.close();
         } catch (SQLException ex){
             log.error("Error to validate connection! - {}", String.valueOf(ex.getNextException()));
-            throw new RuntimeException();
+            throw new RuntimeException(ex);
         }
     }
 
-    private void testConnection(){
+    public void testConnection(){
         log.info("Testing connection DB");
         try {
             Connection connection = getConnection();
@@ -92,7 +93,7 @@ public class ConfigDB implements CommandLineRunner{
         }
     }
 
-    private void verifyUserPermissions(){
+    public void verifyUserPermissions(){
         Map<String, Boolean> permissionStatus = new HashMap<>();
         String userDB = "calcDB";
 
@@ -110,6 +111,7 @@ public class ConfigDB implements CommandLineRunner{
         try (PreparedStatement stmt = getConnection().prepareStatement(sqlQuery)) {
             log.info("Preparing the statement to be executed.");
             stmt.setString(1, userDB);
+            stmt.executeQuery();
             ResultSet rs = stmt.getResultSet();
 
             //Coleta todas as permissões concedidas ao usuário
@@ -139,7 +141,7 @@ public class ConfigDB implements CommandLineRunner{
         }
     }
 
-    private void applyPermissionsToUser() {
+    public void applyPermissionsToUser() {
         log.info("Initialize script to apply permissions");
         try (Statement stmt = getConnection().createStatement()) {
             String sqlQueryPermissionsGranted = String.valueOf(new BufferedReader(new FileReader(getDbTypeGrantedPermissions(getConnection()))));
@@ -161,7 +163,7 @@ public class ConfigDB implements CommandLineRunner{
         }
     }
 
-    private void checkIfTablesExist(){
+    public void checkIfTablesExist(){
         log.info("Checking tables on DB");
         try {
             Connection connection = getConnection();
@@ -184,12 +186,12 @@ public class ConfigDB implements CommandLineRunner{
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        dataSource.setLoginTimeout(10);
+    public Connection getConnection() throws SQLException {
+        //dataSource.setLoginTimeout(10);
         return dataSource.getConnection();
     }
 
-    private void creatingTablesOnDbs(Connection connection) {
+    public void creatingTablesOnDbs(Connection connection) {
         log.info("Creating tables...");
         try {
             String sqlFile = getDbTypeCreateTables(connection);
@@ -203,22 +205,22 @@ public class ConfigDB implements CommandLineRunner{
         }
     }
 
-    private static @NonNull String getDbTypeCreateTables(Connection connection) throws SQLException {
+    public @NonNull String getDbTypeCreateTables(Connection connection) throws SQLException {
         String dbType = connection.getMetaData().getDatabaseProductName();
-        String sqlFile;
+        String pathSqlFile;
         switch (dbType){
-            case DatabaseTypeMysql -> sqlFile = "resources/DBQuerys/MySQL/V1_CREATE_TABLES_DB.sql";
+            case DatabaseTypeMysql, DatabaseTypeH2 -> pathSqlFile = "src/main/resources/DBQuerys/MySQL/V1_CREATE_TABLES_DB.sql";
 
-            case DatabaseTypePostgres -> sqlFile = "resources/DBQuerys/Postgress/V1_CREATE_TABLES_DB.sql";
+            case DatabaseTypePostgres -> pathSqlFile = "src/main/resources/DBQuerys/Postgress/V1_CREATE_TABLES_DB.sql";
 
-            case DatabaseTypeSqlServer -> sqlFile = "resources/DBQuerys/SqlServer/V1_CREATE_TABLES_DB.sql";
+            case DatabaseTypeSqlServer -> pathSqlFile = "src/main/resources/DBQuerys/SqlServer/V1_CREATE_TABLES_DB.sql";
 
             default -> throw new IllegalStateException("Unexpected value db type: " + dbType);
         }
-        return sqlFile;
+        return pathSqlFile;
     }
 
-    private static @NonNull String getDbTypeGrantedPermissions(Connection connection) throws SQLException {
+    public static @NonNull String getDbTypeGrantedPermissions(Connection connection) throws SQLException {
         String dbType = connection.getMetaData().getDatabaseProductName();
         String sqlFile;
         switch (dbType){
@@ -239,6 +241,6 @@ public class ConfigDB implements CommandLineRunner{
         validateConnection();
         testConnection();
         checkIfTablesExist();
-        verifyUserPermissions();
+//        verifyUserPermissions();
     }
 }
