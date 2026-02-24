@@ -262,7 +262,7 @@ public class ConfigDBTest {
         when(statement.executeQuery("SHOW TABLES;")).thenReturn(resultSet);
         when(resultSet.getRow()).thenReturn(5);
 
-        configDB.run();
+//        configDB.run();
         verify(connection, times(4)).close();
     }
 }

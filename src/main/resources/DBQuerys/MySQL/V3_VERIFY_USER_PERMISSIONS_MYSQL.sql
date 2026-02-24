@@ -1,3 +1,5 @@
+USE information_schema;
+
 SHOW GRANTS FOR CURRENT_USER();
 
 SELECT
@@ -10,8 +12,10 @@ FROM information_schema.TABLE_PRIVILEGES
 WHERE GRANTEE = CONCAT("'", 'calcUserDB', "'@'", '%', "'")
 ORDER BY TABLE_SCHEMA, TABLE_NAME;
 
+USE mysql;
 SELECT * FROM mysql.user WHERE User = 'calcUserDB';
 
+USE information_schema;
 SELECT
     ROUTINE_SCHEMA,
     ROUTINE_NAME,

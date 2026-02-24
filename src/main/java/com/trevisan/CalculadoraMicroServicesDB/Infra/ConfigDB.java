@@ -26,7 +26,7 @@ public class ConfigDB implements CommandLineRunner{
     );
 
     private static final String DatabaseTypeMysql = "MySQL";
-    private static final String DatabaseTypePostgres = "Postgress";
+    private static final String DatabaseTypePostgres = "Postgres";
     private static final String DatabaseTypeSqlServer = "SqlServer";
     private static final String DatabaseTypeH2 = "H2";
 
@@ -93,49 +93,48 @@ public class ConfigDB implements CommandLineRunner{
         }
     }
 
-    public void verifyUserPermissions(){
+    public void verifyUserPermissions() throws SQLException {
         Map<String, Boolean> permissionStatus = new HashMap<>();
-        String userDB = "calcDB";
+        String userDB = getConnection().getMetaData().getUserName();
+
+        if (userDB.isEmpty()){
+            throw new RuntimeException("Cannot get user name from connection metadata.");
+        }
 
         String sqlQuery = """
-            SELECT
-                permission_name,
-                state_desc
-            FROM sys.database_permissions dp
-            JOIN sys.database_principals dp2
-                ON dp.grantee_principal_id = dp2.principal_id
-            WHERE dp2.name = ?
-            AND state_desc = 'GRANT'
+            USE information_schema;
+            SELECT * FROM USER_PRIVILEGES WHERE GRANTEE = "'" + userDB + "'@'%'";
             """;
 
         try (PreparedStatement stmt = getConnection().prepareStatement(sqlQuery)) {
             log.info("Preparing the statement to be executed.");
             stmt.setString(1, userDB);
-            stmt.executeQuery();
+            stmt.execute();
             ResultSet rs = stmt.getResultSet();
 
-            //Coleta todas as permissões concedidas ao usuário
-            Set<String> grantedPermissions = new HashSet<>();
-            while (rs.next()){
-                log.info("Collecting permissions granted to the user.");
-                grantedPermissions.add(rs.getString("permission_name"));
+            if (!rs.wasNull()){
+                //Coleta todas as permissões concedidas ao usuário
+                Map<String, String> grantedPermissions = new HashMap<>();
+                while (rs.next()){
+                    log.info("Collecting permissions granted to the user.");
+                    grantedPermissions.put(rs.getString("GRANTEE"), rs.getString("IS_GRANTABLE"));
+                }
+
+                //Verifica cada permissão requerida pelo usuário
+                for (String required : REQUIRED_PERMISSIONS){
+                    log.info("Checking permissions granted to the user");
+                    permissionStatus.put(required, grantedPermissions.containsKey(required));
+                }
+
+                permissionStatus.forEach((perm, granted) ->
+                        System.err.println(perm + ": " + (granted ? "YES" : "NO"))
+                );
+
+                if (permissionStatus.containsValue(false)){
+                    log.info("Attempting to apply missing permissions to the user.");
+                    applyPermissionsToUser();
+                }
             }
-
-            //Verifica cada permissão requerida pelo usuário
-            for (String required : REQUIRED_PERMISSIONS){
-                log.info("Checking permissions granted to the user");
-                permissionStatus.put(required, grantedPermissions.contains(required));
-            }
-
-            permissionStatus.forEach((perm, granted) ->
-                    System.err.println(perm + ": " + (granted ? "CONCEDIDA" : "FALTANDO"))
-            );
-
-            if (permissionStatus.containsValue(false)){
-                log.info("Attempting to apply missing permissions to the user.");
-                applyPermissionsToUser();
-            }
-
         } catch (SQLException ex) {
             throw new RuntimeException(ex.getMessage());
         }
@@ -211,7 +210,7 @@ public class ConfigDB implements CommandLineRunner{
         switch (dbType){
             case DatabaseTypeMysql, DatabaseTypeH2 -> pathSqlFile = "src/main/resources/DBQuerys/MySQL/V1_CREATE_TABLES_DB.sql";
 
-            case DatabaseTypePostgres -> pathSqlFile = "src/main/resources/DBQuerys/Postgress/V1_CREATE_TABLES_DB.sql";
+            case DatabaseTypePostgres -> pathSqlFile = "src/main/resources/DBQuerys/Postgres/V1_CREATE_TABLES_DB.sql";
 
             case DatabaseTypeSqlServer -> pathSqlFile = "src/main/resources/DBQuerys/SqlServer/V1_CREATE_TABLES_DB.sql";
 
@@ -236,11 +235,11 @@ public class ConfigDB implements CommandLineRunner{
     }
 
     @Override
-    public void run(String @NonNull ... args){
+    public void run(String @NonNull ... args) throws SQLException {
         checkConnection();
+        verifyUserPermissions();
         validateConnection();
         testConnection();
         checkIfTablesExist();
-//        verifyUserPermissions();
     }
 }
