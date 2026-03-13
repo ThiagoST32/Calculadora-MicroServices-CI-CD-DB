@@ -1,23 +1,26 @@
 spring:
   application:
     name: CalculadoraMicroServicesDB
-
+  config:
+    import: "vault://secret/calcDbSecrets"
   cloud:
     vault:
-      uri: http://localhost:8200
-      token: vault-root-token
+      uri: ${VAULT_APPLICATION_ADDR}
+      token: ${VAULT_TOKEN}
+      authentication: TOKEN
+      connection-timeout: 5000
       kv:
         enabled: true
         backend: secret
+        default-context: calcDbSecrets
+        application-name: CalculadoraMicroServicesDB
+        profile-separator: /
+
 
   datasource:
-    url: jdbc:mysql://localhost:3306/calc
-    username: calcUserDB
-#    username: ${spring.cloud.vault.secret.CalculadoraMicroServicesDB.calc.mysql.username}
-#    password: ${spring.cloud.vault.secret.CalculadoraMicroServicesDB.calc.mysql.password}
-    password: 123456
     driverClassName: com.mysql.cj.jdbc.Driver
     defer-datasource-initialization: true
+
   jpa:
     properties:
       hibernate:

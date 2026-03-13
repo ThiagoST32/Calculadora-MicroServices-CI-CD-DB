@@ -3,23 +3,33 @@ package com.trevisan.CalculadoraMicroServicesDB.Infra;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.EncodedResource;
 
 import javax.sql.DataSource;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
-import static org.springframework.jdbc.datasource.init.ScriptUtils.*;
+import static org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript;
 
 @Configuration
 @Slf4j
 public class ConfigDB implements CommandLineRunner{
+
+    @Value("${spring.datasource.url}")
+    private String datasourceUrl;
+    @Value("${spring.datasource.username}")
+    private String datasourceUsername;
+    @Value("${spring.datasource.password}")
+    private String datasourcePassword;
+    @Value("${spring.datasource.driver-class-name}")
+    private String datasourceDriverClassName;
 
     private static final List<String> REQUIRED_PERMISSIONS = Arrays.asList(
             "SELECT", "INSERT", "UPDATE", "DELETE", "EXECUTE"
@@ -79,11 +89,6 @@ public class ConfigDB implements CommandLineRunner{
             Statement statement = connection.createStatement();
 
             ResultSet resultOfStatementExecuted = statement.executeQuery(sqlQuery);
-
-            if (resultOfStatementExecuted.wasNull()){
-                log.error("Cannot execute statement to testing DB");
-                throw new RuntimeException();
-            }
             
             resultOfStatementExecuted.close();
             connection.close();
@@ -94,70 +99,53 @@ public class ConfigDB implements CommandLineRunner{
     }
 
     public void verifyUserPermissions() throws SQLException {
-        Map<String, Boolean> permissionStatus = new HashMap<>();
-        String userDB = getConnection().getMetaData().getUserName();
-
-        if (userDB.isEmpty()){
-            throw new RuntimeException("Cannot get user name from connection metadata.");
-        }
-
         String sqlQuery = """
-            USE information_schema;
-            SELECT * FROM USER_PRIVILEGES WHERE GRANTEE = "'" + userDB + "'@'%'";
+            SELECT * FROM USER_PRIVILEGES WHERE GRANTEE = "'calcUserDB'@'%'";
             """;
 
-        try (PreparedStatement stmt = getConnection().prepareStatement(sqlQuery)) {
+        try (Connection newConnection = getConnectionToAnotherDatabase()) {
+            PreparedStatement stmt = newConnection.prepareStatement(sqlQuery);
             log.info("Preparing the statement to be executed.");
-            stmt.setString(1, userDB);
-            stmt.execute();
-            ResultSet rs = stmt.getResultSet();
 
-            if (!rs.wasNull()){
-                //Coleta todas as permissões concedidas ao usuário
-                Map<String, String> grantedPermissions = new HashMap<>();
-                while (rs.next()){
-                    log.info("Collecting permissions granted to the user.");
-                    grantedPermissions.put(rs.getString("GRANTEE"), rs.getString("IS_GRANTABLE"));
-                }
+            ResultSet rs = stmt.executeQuery();
 
-                //Verifica cada permissão requerida pelo usuário
-                for (String required : REQUIRED_PERMISSIONS){
-                    log.info("Checking permissions granted to the user");
-                    permissionStatus.put(required, grantedPermissions.containsKey(required));
-                }
+            //Coleta todas as permissões concedidas ao usuário
+            Map<String, Boolean> permissionStatus = new HashMap<>();
+            Set<String> grantedPermissions = new HashSet<>();
+            log.info("Collecting permissions granted to the user.");
+            while (rs.next()){
+                grantedPermissions.add(rs.getString("PRIVILEGE_TYPE"));
+            }
 
-                permissionStatus.forEach((perm, granted) ->
-                        System.err.println(perm + ": " + (granted ? "YES" : "NO"))
-                );
+            //Verifica cada permissão requerida pelo usuário
+            log.info("Checking permissions granted to the user");
+            for (String required : REQUIRED_PERMISSIONS){
+                permissionStatus.put(required, grantedPermissions.contains(required));
+            }
 
-                if (permissionStatus.containsValue(false)){
-                    log.info("Attempting to apply missing permissions to the user.");
-                    applyPermissionsToUser();
-                }
+            if (permissionStatus.containsValue(false)){
+                log.info("Attempting to apply missing permissions to the user.");
+                applyPermissionsToUser();
             }
         } catch (SQLException ex) {
             throw new RuntimeException(ex.getMessage());
         }
     }
 
-    public void applyPermissionsToUser() {
+    public void applyPermissionsToUser() throws SQLException{
         log.info("Initialize script to apply permissions");
-        try (Statement stmt = getConnection().createStatement()) {
-            String sqlQueryPermissionsGranted = String.valueOf(new BufferedReader(new FileReader(getDbTypeGrantedPermissions(getConnection()))));
-            stmt.executeQuery(sqlQueryPermissionsGranted);
 
-            ResultSet rs = stmt.getResultSet();
-
-            if (rs.wasNull()) {
-                log.error("Error to apply sql query");
-                throw new RuntimeException();
-            }
-
-            getConnection().commit();
-            rs.close();
-            getConnection().close();
+        try (Connection newConnection = getConnectionToAnotherDatabase()) {
+            Statement stmt = newConnection.createStatement();
+            String sqlQueryPermissionsGranted = String.valueOf(new BufferedReader(
+                    new FileReader(
+                            getDbTypeGrantedPermissions(getConnection())
+                    )
+            ).readLine());
+            stmt.execute(sqlQueryPermissionsGranted);
+            newConnection.close();
             log.info("Permissions applied successfully.");
-        } catch (SQLException | FileNotFoundException e) {
+        } catch (SQLException | IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -181,12 +169,12 @@ public class ConfigDB implements CommandLineRunner{
             connection.close();
             log.info("Statement executed to check tables with successfully");
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
     public Connection getConnection() throws SQLException {
-        //dataSource.setLoginTimeout(10);
+        dataSource.setLoginTimeout(10);
         return dataSource.getConnection();
     }
 
@@ -194,40 +182,37 @@ public class ConfigDB implements CommandLineRunner{
         log.info("Creating tables...");
         try {
             String sqlFile = getDbTypeCreateTables(connection);
-            EncodedResource sqlQuery = new EncodedResource(new FileSystemResource(sqlFile));
+            EncodedResource sqlQuery = new EncodedResource(new ClassPathResource(sqlFile));
             executeSqlScript(connection, sqlQuery);
-            connection.commit();
             log.info("Tables created with successfully!");
             connection.close();
         } catch (SQLException ex) {
-            throw new RuntimeException(ex.getNextException());
+            throw new RuntimeException(ex.getMessage());
         }
     }
 
     public @NonNull String getDbTypeCreateTables(Connection connection) throws SQLException {
         String dbType = connection.getMetaData().getDatabaseProductName();
-        String pathSqlFile;
-        switch (dbType){
-            case DatabaseTypeMysql, DatabaseTypeH2 -> pathSqlFile = "src/main/resources/DBQuerys/MySQL/V1_CREATE_TABLES_DB.sql";
+        return switch (dbType){
+            case DatabaseTypeMysql, DatabaseTypeH2 -> "DBQuerys/MySQL/V1_CREATE_TABLES_DB.sql";
 
-            case DatabaseTypePostgres -> pathSqlFile = "src/main/resources/DBQuerys/Postgres/V1_CREATE_TABLES_DB.sql";
+            case DatabaseTypePostgres -> "DBQuerys/Postgres/V1_CREATE_TABLES_DB.sql";
 
-            case DatabaseTypeSqlServer -> pathSqlFile = "src/main/resources/DBQuerys/SqlServer/V1_CREATE_TABLES_DB.sql";
+            case DatabaseTypeSqlServer -> "DBQuerys/SqlServer/V1_CREATE_TABLES_DB.sql";
 
             default -> throw new IllegalStateException("Unexpected value db type: " + dbType);
-        }
-        return pathSqlFile;
+        };
     }
 
     public static @NonNull String getDbTypeGrantedPermissions(Connection connection) throws SQLException {
         String dbType = connection.getMetaData().getDatabaseProductName();
         String sqlFile;
         switch (dbType){
-            case DatabaseTypeMysql -> sqlFile = "resources/DBQuerys/MySQL/V2_USER_PERMISSIONS_MYSQL.sql";
+            case DatabaseTypeMysql -> sqlFile = "src/main/resources/DBQuerys/MySQL/V2_USER_PERMISSIONS_MYSQL.sql";
 
-            case DatabaseTypePostgres -> sqlFile = "resources/DBQuerys/Postgress/V2_USER_PERMISSIONS_POSTGRES.sql";
+            case DatabaseTypePostgres -> sqlFile = "src/main/resources/DBQuerys/Postgress/V2_USER_PERMISSIONS_POSTGRES.sql";
 
-            case DatabaseTypeSqlServer -> sqlFile = "resources/DBQuerys/SqlServer/V2_USER_PERMISSIONS_SQLSERVER.sql";
+            case DatabaseTypeSqlServer -> sqlFile = "src/main/resources/DBQuerys/SqlServer/V2_USER_PERMISSIONS_SQLSERVER.sql";
 
             default -> throw new IllegalStateException("Unexpected value: " + dbType);
         }
@@ -235,11 +220,30 @@ public class ConfigDB implements CommandLineRunner{
     }
 
     @Override
-    public void run(String @NonNull ... args) throws SQLException {
-        checkConnection();
-        verifyUserPermissions();
-        validateConnection();
-        testConnection();
-        checkIfTablesExist();
+    public void run(String @NonNull ... args) {
+        try {
+            checkConnection();
+            checkIfTablesExist();
+            verifyUserPermissions();
+            validateConnection();
+            testConnection();
+        } catch (Exception ex){
+            log.error("Error while executing test connection {}", ex.getMessage());
+        }
+    }
+
+    private Connection getConnectionToAnotherDatabase(){
+        try {
+            Class.forName(datasourceDriverClassName);
+            String urlWithDatabase = datasourceUrl.replaceAll("/[^/]*$", "/" + "information_schema");
+
+            return DriverManager.getConnection(
+                    urlWithDatabase,
+                    datasourceUsername,
+                    datasourcePassword
+            );
+        } catch (ClassNotFoundException | SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
