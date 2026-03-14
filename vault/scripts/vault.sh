@@ -3,12 +3,20 @@ set -e
 
 /usr/local/bin/docker-entrypoint.sh "$@" &
 
-# Wait for Vault to be available
-export VAULT_ADDR=http://127.0.0.1:8200
-export VAULT_TOKEN=${VAULT_ROOT_TOKEN_ID}
+export VAULT_ADDR=${VAULT_INTERNAL_ADDR}
+export VAULT_TOKEN=${VAULT_DEV_ROOT_TOKEN_ID}
+
+echo "⏳ Waiting for Vault to initialize..."
 
 until vault status >/dev/null 2>&1; do
   sleep 1
+done
+
+sleep 3
+
+until vault token lookup >/dev/null 2>&1; do
+  echo "⏳ Waiting for Vault token to be ready..."
+  sleep 2
 done
 
 echo "✅ Vault is ready, writing secrets..."
