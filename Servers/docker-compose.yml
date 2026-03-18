@@ -12,16 +12,6 @@ services:
 
     restart: unless-stopped
 
-  loki-service:
-    container_name: loki-monitor
-    image: grafana/loki:latest
-    ports:
-      - "3100:3100"
-    command:
-      - -config.file=/etc/loki/loki-config.yaml
-    networks:
-      - calc-db-network
-
   grafana-service:
     container_name: grafana-monitor
     image: grafana/grafana-oss:latest
@@ -40,10 +30,37 @@ services:
 
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
 
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    networks:
+      - calc-db-network
+
+  cadvisor-service:
+    container_name: cadvisor-monitor
+    image: gcr.io/cadvisor/cadvisor:latest
+
+    depends_on:
+      - prometheus-service
+    command:
+      - --port=8082
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8082 || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
