@@ -125,11 +125,11 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
           "mappings": [],
-          "max": 5,
+          "max": 10,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -227,11 +227,11 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
           "mappings": [],
-          "max": 10,
+          "max": 100,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -331,7 +331,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
           "mappings": [],
@@ -431,7 +431,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
           "mappings": [],
@@ -507,6 +507,6 @@
   "timezone": "browser",
   "title": "Banco de Dados MySQL",
   "uid": "rojfsc9",
-  "version": 10,
+  "version": 1,
   "weekStart": ""
 }

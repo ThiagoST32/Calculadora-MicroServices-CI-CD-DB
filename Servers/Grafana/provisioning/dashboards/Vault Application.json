@@ -61,7 +61,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
           "mappings": [],
@@ -162,11 +162,11 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
           "mappings": [],
-          "max": 150,
+          "max": 100,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -176,11 +176,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 130
+                "value": 80
               },
               {
                 "color": "red",
-                "value": 140
+                "value": 90
               }
             ]
           },
@@ -262,7 +262,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
           "mappings": [],
@@ -276,11 +276,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 25
+                "value": 20
               },
               {
                 "color": "red",
-                "value": 30
+                "value": 25
               }
             ]
           }
@@ -367,7 +367,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
           "mappings": [],
@@ -379,12 +379,12 @@
                 "value": 0
               },
               {
-                "color": "red",
-                "value": 0
-              },
-              {
                 "color": "#EAB839",
                 "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           }
@@ -417,7 +417,7 @@
       "targets": [
         {
           "editorMode": "builder",
-          "expr": "vault_core_unsealed{instance=\"vault-calc:8200\", cluster=\"vault-cluster-470928c5\", job=\"vault-calc\"}",
+          "expr": "vector(0)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -442,6 +442,6 @@
   "timezone": "browser",
   "title": "Vault Application",
   "uid": "rowg64v",
-  "version": 9,
+  "version": 1,
   "weekStart": ""
 }

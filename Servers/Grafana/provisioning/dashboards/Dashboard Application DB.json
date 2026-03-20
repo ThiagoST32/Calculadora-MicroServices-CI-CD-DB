@@ -54,7 +54,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "showValues": true,
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -481,7 +481,8 @@
                 "value": 90
               }
             ]
-          }
+          },
+          "unit": "decmbytes"
         },
         "overrides": []
       },
@@ -509,7 +510,7 @@
       "targets": [
         {
           "editorMode": "builder",
-          "expr": "jvm_memory_used_bytes{instance=\"calc-application-db:8081\"}",
+          "expr": "jvm_memory_used_bytes{instance=\"calc-application-db:8081\"} / 1024 / 1024",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -798,7 +799,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisBorderShow": false,
@@ -806,21 +807,35 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
             "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "area"
             }
           },
+          "fieldMinMax": true,
           "mappings": [],
           "thresholds": {
             "mode": "percentage",
@@ -830,11 +845,16 @@
                 "value": 0
               },
               {
+                "color": "#EAB839",
+                "value": 80
+              },
+              {
                 "color": "red",
                 "value": 90
               }
             ]
-          }
+          },
+          "unit": "decbytes"
         },
         "overrides": []
       },
@@ -846,35 +866,25 @@
       },
       "id": 5,
       "options": {
-        "barRadius": 0,
-        "barWidth": 0.97,
-        "colorByField": "avg(process_network_receive_bytes_total{instance=\"vault-calc:8200\"})",
-        "fullHighlight": false,
-        "groupWidth": 0.7,
         "legend": {
           "calcs": [
-            "first"
+            "lastNotNull"
           ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
-        "orientation": "auto",
-        "showValue": "auto",
-        "stacking": "normal",
         "tooltip": {
           "hideZeros": false,
           "mode": "single",
           "sort": "none"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        }
       },
       "pluginVersion": "12.4.1",
       "targets": [
         {
           "editorMode": "builder",
-          "expr": "avg(process_network_receive_bytes_total{instance=\"vault-calc:8200\"})",
+          "expr": "rate(process_network_receive_bytes_total{instance=\"vault-calc:8200\"}[$__rate_interval])",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -882,7 +892,7 @@
       ],
       "title": "Network receive Vault %",
       "transparent": true,
-      "type": "barchart"
+      "type": "timeseries"
     }
   ],
   "preload": false,
@@ -898,8 +908,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Dashboard Application DB ",
+  "title": "Dashboard Application DB",
   "uid": "rosxhgm",
-  "version": 6,
+  "version": 1,
   "weekStart": ""
 }
