@@ -30,12 +30,26 @@ services:
 
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./Grafana/provisioning/:/etc/grafana/provisioning/
 
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
+
+    networks:
+      - calc-db-network
+
+  mysql-exporter:
+    container_name: mysql-monitor
+    image: prom/mysqld-exporter:latest
+    command:
+      - --mysqld.username=${MYSQL_USERNAME}:${MYSQL_USER_PASSWORD}
+      - --mysqld.address=mysql-calc:3306
+    ports:
+      - "9104:9104"
+    restart: unless-stopped
 
     networks:
       - calc-db-network
