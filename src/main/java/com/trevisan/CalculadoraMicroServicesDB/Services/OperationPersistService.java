@@ -1,7 +1,7 @@
 package com.trevisan.CalculadoraMicroServicesDB.Services;
 
 import com.trevisan.CalculadoraMicroServicesDB.Domain.Operations;
-import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsRequestDTO;
+import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationRequestPersistDTO;
 import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsResponseDTO;
 import com.trevisan.CalculadoraMicroServicesDB.Mappers.OperationMappers;
 import com.trevisan.CalculadoraMicroServicesDB.Repositories.OperationRepository;
@@ -22,7 +22,7 @@ public class OperationPersistService {
         this.mappers = mappers;
     }
 
-    public void saveOperationOnDB(OperationsRequestDTO dto){
+    public void saveOperationOnDB(OperationRequestPersistDTO dto){
         if (dto == null){
             throw new RuntimeException();
         }

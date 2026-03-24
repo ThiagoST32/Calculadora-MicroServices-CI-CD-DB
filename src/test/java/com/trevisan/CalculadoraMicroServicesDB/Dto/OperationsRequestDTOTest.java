@@ -1,6 +1,6 @@
 package com.trevisan.CalculadoraMicroServicesDB.Dto;
 
-import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsRequestDTO;
+import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationRequestPersistDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +14,7 @@ class OperationsRequestDTOTest {
     @Test
     @DisplayName("Should return provided values")
     void record_getters_returnProvidedValues() {
-        OperationsRequestDTO dto = new OperationsRequestDTO("10", "20", "30", null);
+        OperationRequestPersistDTO dto = new OperationRequestPersistDTO("10", "20", "30", null);
 
         assertEquals("10", dto.valueOne());
         assertEquals("20", dto.valueTwo());
@@ -25,8 +25,8 @@ class OperationsRequestDTOTest {
     @Test
     @DisplayName("Should verify hashcode between DTOs")
     void equals_and_hashcode_work() {
-        OperationsRequestDTO a = new OperationsRequestDTO("1", "2", "3", null);
-        OperationsRequestDTO b = new OperationsRequestDTO("1", "2", "3", null);
+        OperationRequestPersistDTO a = new OperationRequestPersistDTO("1", "2", "3", null);
+        OperationRequestPersistDTO b = new OperationRequestPersistDTO("1", "2", "3", null);
 
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());

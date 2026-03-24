@@ -1,6 +1,6 @@
 package com.trevisan.CalculadoraMicroServicesDB.Controllers;
 
-import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsRequestDTO;
+import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationRequestPersistDTO;
 import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsResponseDTO;
 import com.trevisan.CalculadoraMicroServicesDB.Services.OperationPersistService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ public class OperationsPersistsController {
     }
 
     @PostMapping("/register")
-    public void persistOperation(@RequestBody OperationsRequestDTO requestDTO){
+    public void persistOperation(@RequestBody OperationRequestPersistDTO requestDTO){
         persistService.saveOperationOnDB(requestDTO);
     }
 

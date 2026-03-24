@@ -1,7 +1,7 @@
 package com.trevisan.CalculadoraMicroServicesDB.Domain;
 
 import com.trevisan.CalculadoraMicroServicesDB.Domain.Enums.TipoDeOperacao;
-import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsRequestDTO;
+import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationRequestPersistDTO;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,7 +34,7 @@ public class Operations {
 
     private LocalDateTime localDateTime = LocalDateTime.now();
 
-    public Operations(OperationsRequestDTO dto){
+    public Operations(OperationRequestPersistDTO dto){
         valueOne = dto.valueOne();
         valueTwo = dto.valueTwo();
         result = dto.result();

@@ -3,7 +3,6 @@ package com.trevisan.CalculadoraMicroServicesDB.Entity;
 
 import com.trevisan.CalculadoraMicroServicesDB.Domain.Enums.TipoDeOperacao;
 import com.trevisan.CalculadoraMicroServicesDB.Domain.Operations;
-import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsRequestDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

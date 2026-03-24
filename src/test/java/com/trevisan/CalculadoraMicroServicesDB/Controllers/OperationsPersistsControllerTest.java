@@ -2,7 +2,7 @@ package com.trevisan.CalculadoraMicroServicesDB.Controllers;
 
 import com.trevisan.CalculadoraMicroServicesDB.Domain.Enums.TipoDeOperacao;
 import com.trevisan.CalculadoraMicroServicesDB.Domain.Operations;
-import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsRequestDTO;
+import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationRequestPersistDTO;
 import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsResponseDTO;
 import com.trevisan.CalculadoraMicroServicesDB.Mappers.OperationMappers;
 import com.trevisan.CalculadoraMicroServicesDB.Repositories.OperationRepository;
@@ -35,7 +35,7 @@ class OperationsPersistsControllerTest {
     @InjectMocks
     private OperationsPersistsController controller;
 
-    private OperationsRequestDTO validRequest;
+    private OperationRequestPersistDTO validRequest;
 
     @Captor
     private ArgumentCaptor<Operations> captor;
@@ -43,7 +43,7 @@ class OperationsPersistsControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        validRequest = new OperationsRequestDTO(
+        validRequest = new OperationRequestPersistDTO(
                 "5", "5", "10", TipoDeOperacao.SOMA
         );
         persistService = new OperationPersistService(repository, mappers);
