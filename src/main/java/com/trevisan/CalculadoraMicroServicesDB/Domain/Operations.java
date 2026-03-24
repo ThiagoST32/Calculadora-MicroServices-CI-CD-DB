@@ -11,7 +11,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -31,8 +30,6 @@ public class Operations {
     private TipoDeOperacao tipoDeOperacao;
 
     private String result;
-
-    private LocalDateTime localDateTime = LocalDateTime.now();
 
     public Operations(OperationRequestPersistDTO dto){
         valueOne = dto.valueOne();
