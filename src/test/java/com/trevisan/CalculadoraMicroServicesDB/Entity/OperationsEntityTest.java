@@ -16,7 +16,7 @@ class OperationEntityTest {
     @Test
     @DisplayName("Should return provided values")
     void record_getters_returnProvidedValues() {
-        Operations operation = new Operations(1L, "10", "20", TipoDeOperacao.SOMA ,"30", null);
+        Operations operation = new Operations(1L, "10", "20", TipoDeOperacao.SOMA ,"30");
 
         assertEquals("10", operation.getValueOne());
         assertEquals("20", operation.getValueTwo());
@@ -27,8 +27,8 @@ class OperationEntityTest {
     @Test
     @DisplayName("Should verify hashcode between DTOs")
     void equals_and_hashcode_work() {
-        Operations operationA = new Operations(1L, "10", "20", TipoDeOperacao.SOMA ,"30", null);
-        Operations operationB = new Operations(1L, "10", "20", TipoDeOperacao.SOMA ,"30", null);
+        Operations operationA = new Operations(1L, "10", "20", TipoDeOperacao.SOMA ,"30");
+        Operations operationB = new Operations(1L, "10", "20", TipoDeOperacao.SOMA ,"30");
 
         assertEquals(operationA, operationB);
         assertEquals(operationA.hashCode(), operationB.hashCode());
