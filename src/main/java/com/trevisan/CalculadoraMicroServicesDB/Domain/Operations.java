@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 public class Operations {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long operationsId;
 
     private String valueOne;
