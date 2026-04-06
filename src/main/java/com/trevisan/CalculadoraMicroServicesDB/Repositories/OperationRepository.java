@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OperationRepository extends JpaRepository<Operations, Long> {
-    @Query(value = "SELECT * FROM operations ORDER BY timeOperation DESC LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT * FROM operations ORDER BY time_operation DESC LIMIT 1", nativeQuery = true)
     Operations findPreviousOperationsPersisted();
 }

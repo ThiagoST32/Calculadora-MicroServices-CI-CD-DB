@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS `operations` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `valueOne` VARCHAR(255),
-    `valueTwo` VARCHAR(255),
-    `tipoDeOperacao` INT NOT NULL,
+    `operations_id` INT NOT NULL AUTO_INCREMENT,
+    `value_one` VARCHAR(255),
+    `value_two` VARCHAR(255),
+    `tipo_de_operacao` INT NOT NULL,
     `result` VARCHAR(255),
-    `timeOperation` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    `time_operation` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY(`id`)
 );
