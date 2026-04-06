@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS `operations` (
     `tipo_de_operacao` INT NOT NULL,
     `result` VARCHAR(255),
     `time_operation` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    PRIMARY KEY(`id`)
+    PRIMARY KEY(`operations_id`)
 );
