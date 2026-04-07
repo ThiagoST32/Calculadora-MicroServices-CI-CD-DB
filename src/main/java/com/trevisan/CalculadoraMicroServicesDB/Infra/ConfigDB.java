@@ -10,9 +10,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.EncodedResource;
 
 import javax.sql.DataSource;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
@@ -136,16 +133,12 @@ public class ConfigDB implements CommandLineRunner{
         log.info("Initialize script to apply permissions");
 
         try (Connection newConnection = getConnectionToAnotherDatabase()) {
-            Statement stmt = newConnection.createStatement();
-            String sqlQueryPermissionsGranted = String.valueOf(new BufferedReader(
-                    new FileReader(
-                            getDbTypeGrantedPermissions(getConnection())
-                    )
-            ).readLine());
-            stmt.execute(sqlQueryPermissionsGranted);
+            String sqlFile = getDbTypeGrantedPermissions(newConnection);
+            EncodedResource sqlQueryPermissionsGranted = new EncodedResource(new ClassPathResource(sqlFile));
+            executeSqlScript(newConnection, sqlQueryPermissionsGranted);
             newConnection.close();
             log.info("Permissions applied successfully.");
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
@@ -208,11 +201,11 @@ public class ConfigDB implements CommandLineRunner{
         String dbType = connection.getMetaData().getDatabaseProductName();
         String sqlFile;
         switch (dbType){
-            case DatabaseTypeMysql -> sqlFile = "src/main/resources/DBQuerys/MySQL/V2_USER_PERMISSIONS_MYSQL.sql";
+            case DatabaseTypeMysql -> sqlFile = "DBQuerys/MySQL/V2_USER_PERMISSIONS_MYSQL.sql";
 
-            case DatabaseTypePostgres -> sqlFile = "src/main/resources/DBQuerys/Postgress/V2_USER_PERMISSIONS_POSTGRES.sql";
+            case DatabaseTypePostgres -> sqlFile = "DBQuerys/Postgress/V2_USER_PERMISSIONS_POSTGRES.sql";
 
-            case DatabaseTypeSqlServer -> sqlFile = "src/main/resources/DBQuerys/SqlServer/V2_USER_PERMISSIONS_SQLSERVER.sql";
+            case DatabaseTypeSqlServer -> sqlFile = "DBQuerys/SqlServer/V2_USER_PERMISSIONS_SQLSERVER.sql";
 
             default -> throw new IllegalStateException("Unexpected value: " + dbType);
         }
