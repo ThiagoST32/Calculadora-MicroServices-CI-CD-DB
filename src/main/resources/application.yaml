@@ -21,9 +21,14 @@ spring:
   jpa:
     properties:
       hibernate:
-        ddl-auto: update
+        ddl-auto: none
         dialect: org.hibernate.dialect.MySQLDialect
       show-sql: true
+
+admin:
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    defer-datasource-initialization: true
 
 management:
   endpoints:

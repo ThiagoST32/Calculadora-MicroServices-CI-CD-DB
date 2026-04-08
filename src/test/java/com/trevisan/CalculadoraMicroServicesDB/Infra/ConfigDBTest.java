@@ -25,7 +25,10 @@ public class ConfigDBTest {
     private ConfigDB configDB;
 
     @Mock
-    private DataSource dataSource;
+    private DataSource primaryDataSource;
+
+    @Mock
+    private DataSource adminDataSource;
 
     @Mock
     private Connection connection;
@@ -44,8 +47,8 @@ public class ConfigDBTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        configDB = new ConfigDB(dataSource);
-        lenient().when(dataSource.getConnection()).thenReturn(connection);
+        configDB = new ConfigDB(primaryDataSource, adminDataSource);
+        lenient().when(primaryDataSource.getConnection()).thenReturn(connection);
     }
 
     @Test
@@ -73,7 +76,7 @@ public class ConfigDBTest {
     @Test
     @DisplayName("Should throw RuntimeException when DataSource fails to provide connection")
     void testCheckConnection_SQLException_ThrowsRuntimeException() throws SQLException {
-        when(dataSource.getConnection()).thenThrow(new SQLException("Connection Error"));
+        when(primaryDataSource.getConnection()).thenThrow(new SQLException("Connection Error"));
 
         assertThrows(RuntimeException.class, () -> configDB.checkConnection());
     }
@@ -85,7 +88,7 @@ public class ConfigDBTest {
 
         assertNotNull(result);
         assertEquals(result, connection);
-        verify(dataSource).getConnection();
+        verify(primaryDataSource).getConnection();
     }
 
     @Test
@@ -102,7 +105,7 @@ public class ConfigDBTest {
     @Test
     @DisplayName("Should propagate SQLException when getting connection fails")
     void testGetConnection_SQLException_PropagatesException() throws SQLException {
-        when(dataSource.getConnection()).thenThrow(new SQLException("DB unreachable"));
+        when(primaryDataSource.getConnection()).thenThrow(new SQLException("DB unreachable"));
 
         assertThrows(SQLException.class, () -> configDB.getConnection());
     }
@@ -182,7 +185,7 @@ public class ConfigDBTest {
     @Test
     @DisplayName("Should return if connection is close after check connection")
     void testIfConnectionIsClosedAfterCheckConnection() throws SQLException {
-        when(dataSource.getConnection()).thenReturn(connection);
+        when(primaryDataSource.getConnection()).thenReturn(connection);
         when(connection.isClosed()).thenReturn(false);
 
         doNothing().when(connection).close();
@@ -210,7 +213,7 @@ public class ConfigDBTest {
     @Test
     @DisplayName("Should throw RuntimeException when SQL exception occurs during connection validation")
     void testValidateConnection_WhenSQLExceptionOnGetConnection() throws SQLException {
-        when(dataSource.getConnection()).thenThrow(new SQLException("Get connection failed"));
+        when(primaryDataSource.getConnection()).thenThrow(new SQLException("Get connection failed"));
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,

@@ -3,8 +3,9 @@ package com.trevisan.CalculadoraMicroServicesDB.Infra;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.EncodedResource;
@@ -13,20 +14,13 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 
-import static org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript;
+import static org.springframework.jdbc.datasource.init.ScriptUtils.*;
 
 @Configuration
 @Slf4j
-public class ConfigDB implements CommandLineRunner{
+public class ConfigDB implements ApplicationRunner {
 
-    @Value("${spring.datasource.url}")
-    private String datasourceUrl;
-    @Value("${spring.datasource.username}")
-    private String datasourceUsername;
-    @Value("${spring.datasource.password}")
-    private String datasourcePassword;
-    @Value("${spring.datasource.driver-class-name}")
-    private String datasourceDriverClassName;
+    private final DataSource adminDataSource;
 
     private static final List<String> REQUIRED_PERMISSIONS = Arrays.asList(
             "SELECT", "INSERT", "UPDATE", "DELETE", "EXECUTE"
@@ -37,11 +31,12 @@ public class ConfigDB implements CommandLineRunner{
     private static final String DatabaseTypeSqlServer = "SqlServer";
     private static final String DatabaseTypeH2 = "H2";
 
-    private final DataSource dataSource;
+    private final DataSource primaryDataSource;
 
     @Autowired
-    public ConfigDB(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public ConfigDB(@Qualifier("adminDataSource") DataSource adminDataSource, DataSource primaryDataSource) {
+        this.adminDataSource = adminDataSource;
+        this.primaryDataSource = primaryDataSource;
     }
 
     public void checkConnection(){
@@ -82,7 +77,7 @@ public class ConfigDB implements CommandLineRunner{
         try {
             Connection connection = getConnection();
 
-            String sqlQuery = "SELECT * FROM OPERATIONS;";
+            String sqlQuery = "SELECT * FROM operations;";
             Statement statement = connection.createStatement();
 
             ResultSet resultOfStatementExecuted = statement.executeQuery(sqlQuery);
@@ -95,12 +90,13 @@ public class ConfigDB implements CommandLineRunner{
         }
     }
 
+
     public void verifyUserPermissions() throws SQLException {
         String sqlQuery = """
             SELECT * FROM USER_PRIVILEGES WHERE GRANTEE = "'calcUserDB'@'%'";
             """;
 
-        try (Connection newConnection = getConnectionToAnotherDatabase()) {
+        try (Connection newConnection = getConnectionAsAdmin()) {
             PreparedStatement stmt = newConnection.prepareStatement(sqlQuery);
             log.info("Preparing the statement to be executed.");
 
@@ -118,6 +114,7 @@ public class ConfigDB implements CommandLineRunner{
             log.info("Checking permissions granted to the user");
             for (String required : REQUIRED_PERMISSIONS){
                 permissionStatus.put(required, grantedPermissions.contains(required));
+                log.info("Permissions granted to the user: {}", required);
             }
 
             if (permissionStatus.containsValue(false)){
@@ -132,7 +129,7 @@ public class ConfigDB implements CommandLineRunner{
     public void applyPermissionsToUser() throws SQLException{
         log.info("Initialize script to apply permissions");
 
-        try (Connection newConnection = getConnectionToAnotherDatabase()) {
+        try (Connection newConnection = getConnectionAsAdmin()) {
             String sqlFile = getDbTypeGrantedPermissions(newConnection);
             EncodedResource sqlQueryPermissionsGranted = new EncodedResource(new ClassPathResource(sqlFile));
             executeSqlScript(newConnection, sqlQueryPermissionsGranted);
@@ -167,8 +164,8 @@ public class ConfigDB implements CommandLineRunner{
     }
 
     public Connection getConnection() throws SQLException {
-        dataSource.setLoginTimeout(10);
-        return dataSource.getConnection();
+        primaryDataSource.setLoginTimeout(10);
+        return primaryDataSource.getConnection();
     }
 
     public void creatingTablesOnDbs(Connection connection) {
@@ -212,8 +209,12 @@ public class ConfigDB implements CommandLineRunner{
         return sqlFile;
     }
 
+    private Connection getConnectionAsAdmin() throws SQLException {
+        return adminDataSource.getConnection();
+    }
+
     @Override
-    public void run(String @NonNull ... args) {
+    public void run(ApplicationArguments args) throws Exception {
         try {
             checkConnection();
             checkIfTablesExist();
@@ -222,21 +223,6 @@ public class ConfigDB implements CommandLineRunner{
             testConnection();
         } catch (Exception ex){
             log.error("Error while executing test connection {}", ex.getMessage());
-        }
-    }
-
-    private Connection getConnectionToAnotherDatabase(){
-        try {
-            Class.forName(datasourceDriverClassName);
-            String urlWithDatabase = datasourceUrl.replaceAll("/[^/]*$", "/" + "information_schema");
-
-            return DriverManager.getConnection(
-                    urlWithDatabase,
-                    datasourceUsername,
-                    datasourcePassword
-            );
-        } catch (ClassNotFoundException | SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 }
