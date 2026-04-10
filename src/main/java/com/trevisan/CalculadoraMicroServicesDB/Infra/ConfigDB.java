@@ -1,5 +1,6 @@
 package com.trevisan.CalculadoraMicroServicesDB.Infra;
 
+import com.trevisan.CalculadoraMicroServicesDB.Infra.TreatmentExceptions.Exceptions.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,13 +45,13 @@ public class ConfigDB implements ApplicationRunner {
         try {
             if (getConnection().isClosed()){
                 log.error("Cannot connect to Database!");
-                throw new RuntimeException();
+                throw new ConnectionTestException();
             }
             log.info("Connect to Database successfully");
             getConnection().close();
         } catch (SQLException ex){
             log.error("Error to connect on Database! - {}", String.valueOf(ex.getNextException()));
-            throw new RuntimeException(ex);
+            throw new ConnectionTestException(ex.getCause());
         }
     }
 
@@ -62,13 +63,13 @@ public class ConfigDB implements ApplicationRunner {
             boolean reachableConnection = connection.isValid(10);
             if (!reachableConnection){
                 log.error("Connection is not valid!");
-                throw new RuntimeException();
+                throw new ConnectionTestException();
             }
             log.info("Connection validate!");
             connection.close();
         } catch (SQLException ex){
             log.error("Error to validate connection! - {}", String.valueOf(ex.getNextException()));
-            throw new RuntimeException(ex);
+            throw new ConnectionTestException(ex.getCause());
         }
     }
 
@@ -86,7 +87,7 @@ public class ConfigDB implements ApplicationRunner {
             connection.close();
             log.info("Statement executed with successfully");
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new ConnectionTestException(e.getCause());
         }
     }
 
@@ -122,7 +123,7 @@ public class ConfigDB implements ApplicationRunner {
                 applyPermissionsToUser();
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex.getMessage());
+            throw new FailedToExecuteOperationsException(ex.getCause());
         }
     }
 
@@ -136,7 +137,7 @@ public class ConfigDB implements ApplicationRunner {
             newConnection.close();
             log.info("Permissions applied successfully.");
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new FailedToExecuteOperationsException(e.getCause());
         }
     }
 
@@ -159,7 +160,7 @@ public class ConfigDB implements ApplicationRunner {
             connection.close();
             log.info("Statement executed to check tables with successfully");
         } catch (SQLException e) {
-            throw new RuntimeException(e.getMessage());
+            throw new FailedToExecuteOperationsException(e.getCause());
         }
     }
 
@@ -177,7 +178,7 @@ public class ConfigDB implements ApplicationRunner {
             log.info("Tables created with successfully!");
             connection.close();
         } catch (SQLException ex) {
-            throw new RuntimeException(ex.getMessage());
+            throw new FailedToExecuteOperationsException(ex.getCause());
         }
     }
 
@@ -190,7 +191,7 @@ public class ConfigDB implements ApplicationRunner {
 
             case DatabaseTypeSqlServer -> "DBQuerys/SqlServer/V1_CREATE_TABLES_DB.sql";
 
-            default -> throw new IllegalStateException("Unexpected value db type: " + dbType);
+            default -> throw new InvalidDatabaseNameException(dbType);
         };
     }
 
@@ -204,7 +205,7 @@ public class ConfigDB implements ApplicationRunner {
 
             case DatabaseTypeSqlServer -> sqlFile = "DBQuerys/SqlServer/V2_USER_PERMISSIONS_SQLSERVER.sql";
 
-            default -> throw new IllegalStateException("Unexpected value: " + dbType);
+            default -> throw new InvalidDatabaseNameException(dbType);
         }
         return sqlFile;
     }

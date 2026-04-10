@@ -3,12 +3,14 @@ package com.trevisan.CalculadoraMicroServicesDB.Services;
 import com.trevisan.CalculadoraMicroServicesDB.Domain.Operations;
 import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationRequestPersistDTO;
 import com.trevisan.CalculadoraMicroServicesDB.Dtos.OperationsResponseDTO;
+import com.trevisan.CalculadoraMicroServicesDB.Infra.TreatmentExceptions.Exceptions.SaveOperationException;
 import com.trevisan.CalculadoraMicroServicesDB.Mappers.OperationMappers;
 import com.trevisan.CalculadoraMicroServicesDB.Repositories.OperationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class OperationPersistService {
@@ -24,7 +26,7 @@ public class OperationPersistService {
 
     public void saveOperationOnDB(OperationRequestPersistDTO dto){
         if (dto == null){
-            throw new RuntimeException();
+            throw new SaveOperationException();
         }
 
         Operations newPersistOperation = new Operations(dto);
@@ -32,11 +34,11 @@ public class OperationPersistService {
     }
 
     public List<OperationsResponseDTO> getAllOperations(){
-        return repository.findAll().stream().map(mappers::mapToOperationsResponse).toList();
+        return Optional.of(repository.findAll().stream().map(mappers::mapToOperationsResponse).toList()).orElse(List.of());
     }
 
     public OperationsResponseDTO getPreviousOperations(){
         var operaReturned = repository.findPreviousOperationsPersisted();
-        return mappers.mapToOperationsResponse(operaReturned);
+        return Optional.of(mappers.mapToOperationsResponse(operaReturned)).orElse(new OperationsResponseDTO("0", "0", "0", null));
     }
 }
